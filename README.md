@@ -1,5 +1,7 @@
 # ✦ Draft Optimizer（DSH 插件）
 
+[![Release](https://img.shields.io/github/v/release/xiong356/dsh-draft-optimizer)](https://github.com/xiong356/dsh-draft-optimizer/releases) [![CI](https://img.shields.io/github/actions/workflow/status/xiong356/dsh-draft-optimizer/ci.yml?branch=main&label=CI)](https://github.com/xiong356/dsh-draft-optimizer/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
+
 > 非官方插件，与 DeepSeek 无附属关系。
 > 在 DSH（DeepSeek Harness）输入框下方加一个 ✦ 小按钮：一键用**当前默认模型**优化草稿，并**原地替换**——绝不自动发送。
 
