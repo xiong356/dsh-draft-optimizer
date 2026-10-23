@@ -1,0 +1,65 @@
+{
+  "name": "dsh-draft-optimizer",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Optimize the current composer draft with the default model and replace it in place — never auto-sends.",
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "plugin",
+    "prompt",
+    "optimizer",
+    "composer",
+    "draft"
+  ],
+  "scripts": {
+    "test": "node tests/manifest.test.mjs"
+  },
+  "exports": {
+    ".": {
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "default": "./lib/client.js"
+    },
+    "./typert": {
+      "default": "./lib/typert.host.js"
+    },
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "lib",
+    "locale",
+    "cordis.patch.yml",
+    "icon.svg"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-conversation"
+      ]
+    }
+  },
+  "dependencies": {
+    "zod": "4.6.5"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xiong356/dsh-draft-optimizer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/xiong356/dsh-draft-optimizer/issues"
+  },
+  "homepage": "https://github.com/xiong356/dsh-draft-optimizer",
+  "engines": {
+    "node": ">=20"
+  }
+}

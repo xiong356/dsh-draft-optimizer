@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Prompt Optimizer",
+    "description": "Optimize the current composer draft with the default model and replace it in place — never auto-sends."
+  }
+}

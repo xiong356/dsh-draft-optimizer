@@ -1,0 +1,14 @@
+# dependencies (vendored local copy only; the published package resolves zod via package.json)
+node_modules/
+
+# internal probing / local-only artifacts
+_probe/
+*.log
+*.bak-*
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# packaging
+*.tgz
