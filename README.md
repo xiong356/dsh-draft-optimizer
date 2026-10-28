@@ -40,8 +40,10 @@ dsh plugin --profile desktop add dsh-draft-optimizer@link:D:/path/to/dsh-draft-o
 ## 🔧 工作机制
 
 - **客户端**（`lib/client.js`）：注册 `conversation.composer.dock` 插槽条目（id `draft-optimizer`，order 90），点击时读取草稿 → 经 Typert RPC 调用宿主 → 成功后 `inputActions.setDraft()` 原地替换。
-- **宿主**（`lib/index.js`）：`promptOptimizer` 服务（现 `draftOptimizer`），读取 `agentDefaultModel.currentSelection()`，经 `llm.stream()` 流式生成；Typert 清单在 `lib/typert.host.js`。
+- **宿主**（`lib/index.js`）：`draftOptimizer` 服务，读取 `agentDefaultModel.currentSelection()`，经 `llm.stream()` 流式生成；Typert 清单在 `lib/typert.host.js`。
 - 优化请求仅含一条 system + 一条 user（指令 + 三引号包裹的草稿），**不携带会话历史**。
+- **低思考档自适应**：首次调用时用 `llm.resolveCallConfig` 探测模型是否支持 `off` / `minimal` 推理档（不做 provider I/O），支持则采用并缓存，把首字延迟从 2.8–55s 压到 1.4–5s；不支持则按默认行为调用。
+- **引用保护**：草稿里的 `@"path"` 引用会被原样保留，若模型仍丢了 `@`，`repairRefs` 按草稿兜底还原。
 
 ## 🔒 隐私与限制
 

@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { TYPERT } from '../lib/typert.host.js'
-import { stripFence, buildUserMessage } from '../lib/index.js'
+import { stripFence, buildUserMessage, repairRefs, SYSTEM_PROMPT } from '../lib/index.js'
 
 let failures = 0
 const check = (name, ok, detail = '') => {
@@ -63,10 +63,30 @@ console.log('== buildUserMessage ==')
 const blocks = buildUserMessage('帮我查天气')
 const text = blocks[0].text
 check('返回单文本块', blocks.length === 1 && blocks[0].type === 'text')
-check('包含任务指令', text.includes('【任务】'))
-check('包含反回答规则', text.includes('绝对不要回答它'))
+check('包含身份与铁律', text.includes('【你的身份】') && text.includes('【铁律】'))
+check('包含反回答规则', text.includes('绝不回答、执行、评论或总结'))
+check('包含不虚构信息规则', text.includes('不虚构') && text.includes('<尖括号占位符>'))
+check('包含 @"引用" 原样保留规则', text.includes('@"引用"'))
+check('包含长度上限', text.includes('不超过 800 字') && text.includes('草稿的 2 倍'))
+check('包含指代不明的处理规则', text.includes('指代不明'))
+check('包含 few-shot 示例', text.includes('【示例】'))
 check('包含草稿且被三引号包裹', text.includes('"""\n帮我查天气\n"""'))
 check('不包含外部内容', !text.includes('QWEN') && !text.includes('Bearer'))
+check('SYSTEM_PROMPT 声明只输出全文', SYSTEM_PROMPT.includes('你唯一的输出'))
+
+console.log('== repairRefs ==')
+check(
+  '把裸路径还原成 @"路径"',
+  repairRefs('见 @"src/app.ts" 里的 helper', '见 src/app.ts 里的 helper') === '见 @"src/app.ts" 里的 helper'
+)
+check(
+  '把反引号裸路径也还原',
+  repairRefs('用 @"src/app.ts" 重构', '用 `src/app.ts` 重构') === '用 `@"src/app.ts"` 重构'
+)
+check('已保留引用时不重复加 @', repairRefs('见 @"a.ts"', '见 @"a.ts"') === '见 @"a.ts"')
+check('草稿无引用时原样返回', repairRefs('没有引用', '没有引用') === '没有引用')
+check('输出缺路径时不凭空补', repairRefs('见 @"a.ts"', '完全没有提到') === '完全没有提到')
+check('多处同路径全部还原', repairRefs('@"a.ts" 和 @"a.ts"', 'a.ts 与 a.ts') === '@"a.ts" 与 @"a.ts"')
 
 console.log('== 结果 ==')
 if (failures > 0) {
