@@ -2,8 +2,9 @@
 
 ```
 ┌───────────────────────────── 客户端 (Web UI) ─────────────────────────────┐
-│ conversation.composer.dock 插槽                                           │
-│   occupant: id=draft-optimizer, order=90                                  │
+│ 同一 occupant 注册到两个相位互斥的插槽(id=draft-optimizer, order=90)       │
+│   conversation.composer.dock → active 对话(输入框下方 dock)                │
+│   conversation.hero.options  → 新建对话(空白会话 hero 屏右侧)              │
 │   DraftOptimizerButton ── useInput(s => s.draft) 读取草稿                  │
 │        │ 点击                                                             │
 │        ▼                                                                 │
@@ -44,3 +45,12 @@
 
 6. **宿主 apply() 防御式注册**：任何注册动作都 try/catch 兜底，失败只降级为
    “插件不可用”，绝不拖垮 host 启动。
+
+7. **双插槽注册（1.1.1 修复“新建对话窗口没有按钮”）**：`ui-conversation` 的
+   composer 在新建对话（空白 Session）时以 `variant="hero"` 渲染，而
+   `conversation.composer.dock` 只在 `variant === "composer"` 时渲染；
+   同一相位下 `conversation.hero.options`（list/session，官方文档：“New Session
+   行中右对齐的紧凑选项，只在有 Session 时渲染”）会渲染。两者按相位互斥，
+   所以同一按钮同时注册到这两个插槽即可覆盖两种界面，且不会重复。
+   两个插槽都是 session 作用域，标准 props（`useInput` / `inputActions` /
+   `sessionId`）一致，组件无需改动。

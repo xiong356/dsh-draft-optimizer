@@ -5,6 +5,18 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.1.1] - 2026-11-04
+
+### Fixed
+
+- **新建对话窗口看不到 ✦ 按钮**：`ui-conversation` 在空白 Session 的 hero 屏里以
+  `variant="hero"` 渲染 composer，而 `conversation.composer.dock` 只在
+  `variant === "composer"`（active 对话）时渲染，因此按钮要等发出第一条消息后才出现。
+  现在同一个按钮额外注册到 `conversation.hero.options`（官方文档的“New Session 行
+  右对齐紧凑选项”，仅 hero 且存在 Session 时渲染）。两个插槽按相位互斥，
+  任一时刻按钮只出现一次；两者都是 session 作用域，`useInput` / `inputActions` /
+  `sessionId` 标准 props 完全一致，点击行为不变。
+
 ## [1.1.0] - 2026-10-27
 
 ### Changed

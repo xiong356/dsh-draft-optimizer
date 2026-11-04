@@ -22,7 +22,7 @@
 ## 它如何工作
 
 见 [docs/architecture.md](./docs/architecture.md)。核心链路：
-composer dock 按钮 → Typert RPC → 宿主 `draftOptimizer` 服务 → `llm.stream()` → 收集流式文本 → `setDraft()` 替换。
+composer dock / hero options 按钮 → Typert RPC → 宿主 `draftOptimizer` 服务 → `llm.stream()` → 收集流式文本 → `setDraft()` 替换。
 
 ## 许可与治理
 

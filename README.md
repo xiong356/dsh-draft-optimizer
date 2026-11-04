@@ -4,10 +4,11 @@
 
 > 非官方插件，与 DeepSeek 无附属关系。
 > 在 DSH（DeepSeek Harness）输入框下方加一个 ✦ 小按钮：一键用**当前默认模型**优化草稿，并**原地替换**——绝不自动发送。
+> 新建对话窗口（还没发第一条消息时）同样可用：按钮显示在「选择工作区 / 智能体」那一行的右侧。
 
 ## ✨ 功能
 
-- 输入框下方 ✦ 小按钮，一键优化当前草稿
+- 输入框下方 ✦ 小按钮，一键优化当前草稿；新建对话窗口（hero 屏）同样显示
 - 只替换、不发送：优化完成后由你检查并手动发送
 - 保持原意、话题方向与语言不变（中文草稿输出中文，英文草稿输出英文）
 - 忙碌 spinner、空草稿禁用、成功 ✓、失败保留原稿并提示、草稿冲突不覆盖
@@ -39,7 +40,7 @@ dsh plugin --profile desktop add dsh-draft-optimizer@link:D:/path/to/dsh-draft-o
 
 ## 🔧 工作机制
 
-- **客户端**（`lib/client.js`）：注册 `conversation.composer.dock` 插槽条目（id `draft-optimizer`，order 90），点击时读取草稿 → 经 Typert RPC 调用宿主 → 成功后 `inputActions.setDraft()` 原地替换。
+- **客户端**（`lib/client.js`）：注册两个相位互斥的插槽条目（id `draft-optimizer`，order 90）——`conversation.composer.dock`（active 对话、输入框下方）与 `conversation.hero.options`（新建对话的“新建会话”行右侧，因为 hero 变体不渲染 composer.dock）；点击时读取草稿 → 经 Typert RPC 调用宿主 → 成功后 `inputActions.setDraft()` 原地替换。
 - **宿主**（`lib/index.js`）：`draftOptimizer` 服务，读取 `agentDefaultModel.currentSelection()`，经 `llm.stream()` 流式生成；Typert 清单在 `lib/typert.host.js`。
 - 优化请求仅含一条 system + 一条 user（指令 + 三引号包裹的草稿），**不携带会话历史**。
 - **低思考档自适应**：首次调用时用 `llm.resolveCallConfig` 探测模型是否支持 `off` / `minimal` 推理档（不做 provider I/O），支持则采用并缓存，把首字延迟从 2.8–55s 压到 1.4–5s；不支持则按默认行为调用。

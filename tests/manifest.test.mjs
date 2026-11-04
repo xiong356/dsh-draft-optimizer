@@ -4,6 +4,7 @@
  * 不依赖测试框架,断言失败时以非零退出码结束。
  */
 import { readFileSync } from 'node:fs'
+import vm from 'node:vm'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { TYPERT } from '../lib/typert.host.js'
@@ -87,6 +88,78 @@ check('已保留引用时不重复加 @', repairRefs('见 @"a.ts"', '见 @"a.ts"
 check('草稿无引用时原样返回', repairRefs('没有引用', '没有引用') === '没有引用')
 check('输出缺路径时不凭空补', repairRefs('见 @"a.ts"', '完全没有提到') === '完全没有提到')
 check('多处同路径全部还原', repairRefs('@"a.ts" 和 @"a.ts"', 'a.ts 与 a.ts') === '@"a.ts" 与 @"a.ts"')
+
+console.log('== 客户端插槽注册(静态) ==')
+// 1.1.1 修复:hero(新建对话)变体不渲染 composer.dock,必须同时注册 hero.options。
+const clientSource = readFileSync(join(here, '..', 'lib', 'client.js'), 'utf8')
+const registeredSlots = [...clientSource.matchAll(/registerInto\('([^']+)'\)/g)].map((m) => m[1])
+check('注册两个相位互斥的插槽', registeredSlots.length === 2, registeredSlots.join(','))
+check('包含 active 对话的 conversation.composer.dock', registeredSlots.includes('conversation.composer.dock'))
+check('包含新建对话的 conversation.hero.options', registeredSlots.includes('conversation.hero.options'))
+check('按钮 occupant id 为 draft-optimizer', clientSource.includes("id: 'draft-optimizer'"))
+check('按钮 order 为 90', /order:\s*90/.test(clientSource))
+
+console.log('== 客户端 apply() 注册行为 ==')
+// 用最小 loader/react 桩执行 apply(),确认两个插槽都真的注册了 occupant。
+let clientModule
+const sandbox = {
+  window: { __ModuleLoader__: { load: (m) => { clientModule = m } } },
+  document: {
+    createElement: () => ({ textContent: '', remove() {} }),
+    head: { appendChild() {} }
+  },
+  navigator: { language: 'zh-CN' },
+  console: { log: () => {}, warn: () => {}, error: () => {} },
+  setTimeout,
+  clearTimeout,
+  Promise
+}
+vm.runInNewContext(clientSource, sandbox, { filename: 'lib/client.js' })
+check('模块 id 为 dsh-draft-optimizer', clientModule && clientModule.id === 'dsh-draft-optimizer', String(clientModule && clientModule.id))
+
+const ReactStub = {
+  createElement: (type, props, ...children) => ({ type, props, children }),
+  useState: () => [undefined, () => {}],
+  useEffect: () => {},
+  useCallback: (fn) => fn
+}
+const injected = []
+const registered = []
+const ctxStub = {
+  remote: undefined,
+  get: () => undefined,
+  effect: (fn) => {
+    if (typeof fn === 'function') {
+      const dispose = fn()
+      if (typeof dispose === 'function') dispose()
+    }
+  },
+  slots: {
+    inject: (name, callback) => {
+      injected.push(name)
+      callback()
+    },
+    register: (options, component) => {
+      registered.push({ options, component })
+    }
+  }
+}
+if (clientModule) {
+  clientModule
+    .factory((request) => {
+      if (request === 'react') return ReactStub
+      throw new Error('unexpected require ' + request)
+    })
+    .apply(ctxStub)
+}
+check('apply() 向两个插槽 inject', injected.length === 2 && injected.includes('conversation.composer.dock') && injected.includes('conversation.hero.options'), injected.join(','))
+check('register() 的 name 与插槽一一对应', registered.length === 2 && registered.every((r) => r.options && injected.includes(r.options.name)), registered.map((r) => r.options && r.options.name).join(','))
+check('两个插槽的 id/order 一致', registered.every((r) => r.options.id === 'draft-optimizer' && r.options.order === 90))
+check('注册的是按钮组件', registered.every((r) => typeof r.component === 'function'))
+
+const button = registered[0] && registered[0].component
+const rendered = button ? button({ optimize: async () => ({ text: 'x' }), useInput: () => '', inputActions: { setDraft() {} }, sessionId: 'session-1' }) : undefined
+check('按钮组件可渲染为 div 容器', Boolean(rendered) && rendered.type === 'div', rendered && String(rendered.type))
 
 console.log('== 结果 ==')
 if (failures > 0) {
