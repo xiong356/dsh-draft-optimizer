@@ -1,6 +1,6 @@
 # ✦ Draft Optimizer（DSH 插件）
 
-[![Release](https://img.shields.io/github/v/release/xiong356/dsh-draft-optimizer)](https://github.com/xiong356/dsh-draft-optimizer/releases) [![CI](https://img.shields.io/github/actions/workflow/status/xiong356/dsh-draft-optimizer/ci.yml?branch=main&label=CI)](https://github.com/xiong356/dsh-draft-optimizer/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
+[![Release](https://img.shields.io/github/v/release/xiong356/dsh-draft-optimizer)](https://github.com/xiong356/dsh-draft-optimizer/releases) [![npm](https://img.shields.io/npm/v/dsh-draft-optimizer)](https://www.npmjs.com/package/dsh-draft-optimizer) [![npm downloads](https://img.shields.io/npm/dm/dsh-draft-optimizer)](https://www.npmjs.com/package/dsh-draft-optimizer) [![CI](https://img.shields.io/github/actions/workflow/status/xiong356/dsh-draft-optimizer/ci.yml?branch=main&label=CI)](https://github.com/xiong356/dsh-draft-optimizer/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
 
 > 非官方插件，与 DeepSeek 无附属关系。
 > 在 DSH（DeepSeek Harness）输入框下方加一个 ✦ 小按钮：一键用**当前默认模型**优化草稿，并**原地替换**——绝不自动发送。
@@ -17,15 +17,25 @@
 
 ## 📦 安装
 
-在桌面端完成安装后**重启 DSH** 即可生效（宿主代码在启动时加载）。
+已发布到 [npm](https://www.npmjs.com/package/dsh-draft-optimizer)（预构建安装，无需 `allowBuilds` 构建授权）：
 
-从源码目录安装（开发模式，junction 链接，改源码立即生效，仅需重启宿主）：
+```
+dsh plugin --profile desktop add dsh-draft-optimizer
+```
+
+也可以直接从 GitHub 源码安装：
+
+```
+dsh plugin --profile desktop add github:xiong356/dsh-draft-optimizer
+```
+
+安装后**重启 DSH** 即可生效（宿主代码在启动时加载）。也可以在 DSH 侧边栏 **Plugins → Add plugin** 里填入包名或仓库地址安装。
+
+本地开发用 junction 链接（改源码立即生效，仅需重启宿主）：
 
 ```
 dsh plugin --profile desktop add dsh-draft-optimizer@link:D:/path/to/dsh-draft-optimizer
 ```
-
-或通过支持本地 bundle 安装的插件管理器界面，选择本仓库根目录安装。
 
 > 源码树内需要一个可解析的 `zod`（Node 按 JS 文件的真实路径解析依赖）：
 > 本地开发请在插件目录执行 `pnpm install`，或在 profile 依赖中声明 zod（与 `dsh-cost-meter` 相同的模式）。

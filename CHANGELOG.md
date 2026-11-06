@@ -5,6 +5,14 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [Unreleased]
+
+### Added
+
+- 发布到 npm：`dsh-draft-optimizer@1.1.1` 已可从 [npm](https://www.npmjs.com/package/dsh-draft-optimizer)
+  安装（预构建安装，无需 `allowBuilds` 构建授权），插件管理器与市场目录可直接按包名安装/更新；
+  README 补充 npm 安装方式与徽章。
+
 ## [1.1.1] - 2026-11-04
 
 ### Fixed
