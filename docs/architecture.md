@@ -16,10 +16,11 @@
 │ 宿主 (Host)                                                              │
 │  draftOptimizer 服务 (lib/index.js)                                      │
 │    1. agentDefaultModel.currentSelection() → provider/model               │
-│    2. llm.stream({provider, model, temperature:0.7, maxTokens:4096,      │
-│                  system, messages:[user(buildUserMessage(text))]})       │
+│    2. llm.stream({provider, model, temperature:0.25, maxTokens:8192,     │
+│                  system, messages:[user(buildUserMessage(text, cfg))]})  │
 │    3. 收集 text-delta（按 index 累加）＋ block-end 整块兜底                │
-│    4. stripFence 去围栏 → 返回 { text }                                   │
+│    4. stripFence 去围栏 → repairRefs 还原 @"path" 引用                     │
+│    5. cfg.clarify 时 appendClarification 追加澄清条款 → { text }          │
 │  Typert 清单 (lib/typert.host.js)：typert-loader 在 entry 挂载时自动注册    │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
@@ -34,7 +35,8 @@
    静默吞错（流零 chunk）。因此始终传 `[{type:'text',text}]`。
 
 3. **不参考对话上下文**：请求只含 system + 一条 user 消息，不携带会话历史。
-   这样保证输出始终是可独立发送的完整提示词（代价：指代不明的草稿无法自动补全）。
+   这样保证输出始终是可独立发送的完整提示词（代价：指代不明的草稿无法自动补全，
+   因此 1.2.0 起默认在末尾追加「执行前澄清」条款，让执行方先提问再动手）。
 
 4. **只替换不发送**：客户端成功回调调用 `inputActions.setDraft(text)`，
    不调用 `submit()`；提交前的草稿快照若与最新值不一致则放弃替换（conflict 提示）。
@@ -54,3 +56,8 @@
    所以同一按钮同时注册到这两个插槽即可覆盖两种界面，且不会重复。
    两个插槽都是 session 作用域，标准 props（`useInput` / `inputActions` /
    `sessionId`）一致，组件无需改动。
+
+8. **选项走 cordis config（1.2.0）**：插件 `apply(ctx, config)` 接收 profile
+   `cordis.patch.yml` 中该条目的 `config` 字段，`normalizeConfig` 收敛为
+   `{ clarify, placeholders, identity }`；`buildUserMessage` 据此动态生成占位符/
+   身份/示例规则，`cfg.clarify === false` 时跳过 `appendClarification`。

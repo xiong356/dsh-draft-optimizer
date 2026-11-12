@@ -8,7 +8,14 @@ import vm from 'node:vm'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { TYPERT } from '../lib/typert.host.js'
-import { stripFence, buildUserMessage, repairRefs, SYSTEM_PROMPT } from '../lib/index.js'
+import {
+  stripFence,
+  buildUserMessage,
+  repairRefs,
+  appendClarification,
+  hasClarification,
+  SYSTEM_PROMPT
+} from '../lib/index.js'
 
 let failures = 0
 const check = (name, ok, detail = '') => {
@@ -66,7 +73,16 @@ const text = blocks[0].text
 check('返回单文本块', blocks.length === 1 && blocks[0].type === 'text')
 check('包含身份与铁律', text.includes('【你的身份】') && text.includes('【铁律】'))
 check('包含反回答规则', text.includes('绝不回答、执行、评论或总结'))
-check('包含不虚构信息规则', text.includes('不虚构') && text.includes('<尖括号占位符>'))
+check('包含不虚构信息规则', text.includes('不虚构'))
+check('默认不产生占位符规则', text.includes('默认不要输出 <尖括号占位符>'))
+check('占位符最多 1 个的兜底', text.includes('才允许用 1 个 <尖括号占位符>'))
+check('非对象缺失信息改为要求/澄清提问', text.includes('写成对执行方的要求') && text.includes('留给末尾澄清条款提问'))
+check('禁止其他待填标记形式', text.includes('【待补充：××】') && text.includes('等其他待填标记'))
+check('不新增身份/角色规则', text.includes('不要新增身份/角色设定'))
+const exampleBlock = text.split('【示例】')[1] || ''
+const examplePlaceholders = (exampleBlock.match(/<[^>]+>/g) || []).length
+check('示例里没有占位符', examplePlaceholders === 0, String(examplePlaceholders))
+check('示例包含指代不明与完整草稿两条', exampleBlock.includes('这个再改一下') && exampleBlock.includes('周报'))
 check('包含 @"引用" 原样保留规则', text.includes('@"引用"'))
 check('包含长度上限', text.includes('不超过 800 字') && text.includes('草稿的 2 倍'))
 check('包含指代不明的处理规则', text.includes('指代不明'))
@@ -74,6 +90,37 @@ check('包含 few-shot 示例', text.includes('【示例】'))
 check('包含草稿且被三引号包裹', text.includes('"""\n帮我查天气\n"""'))
 check('不包含外部内容', !text.includes('QWEN') && !text.includes('Bearer'))
 check('SYSTEM_PROMPT 声明只输出全文', SYSTEM_PROMPT.includes('你唯一的输出'))
+
+console.log('== config 选项 ==')
+const neverText = buildUserMessage('这个再改一下', { placeholders: 'never' })[0].text
+check("placeholders:'never' 改为完全禁止占位符", neverText.includes('绝不输出 <尖括号占位符>') && !neverText.includes('才允许用 1 个 <尖括号占位符>'))
+check("placeholders:'never' 示例中无占位符", !(neverText.split('【示例】')[1] || '').match(/<[^>]+>/))
+check("placeholders:'never' 指代不明规则不再允许占位符", !neverText.includes('才用 1 个 <占位符>') && neverText.includes('中性指代'))
+const identityText = buildUserMessage('写个方案', { identity: true })[0].text
+check('identity:true 允许补充身份', identityText.includes('可按需补充身份/角色设定'))
+check('identity 默认禁止', text.includes('不要新增身份/角色设定'))
+check('config 非法值回退默认', buildUserMessage('x', null)[0].text.includes('默认不要输出 <尖括号占位符>'))
+check('appendClarification 默认附加条款', appendClarification('x', 'out').length > 3)
+
+console.log('== appendClarification ==')
+const zhOut = appendClarification('帮我查天气', '请查询北京今天的天气。')
+check('中文草稿追加中文澄清条款', zhOut.includes('执行前先做一次澄清') && zhOut.startsWith('请查询北京今天的天气。'))
+check(
+  '条款覆盖五个确认要点',
+  ['任务目标', '使用场景', '输出形式', '判断标准', '限制条件'].every((k) => zhOut.includes(k)),
+  zhOut
+)
+check('条款要求确认清楚后再执行', zhOut.includes('确认清楚后再开始执行'))
+const enOut = appendClarification('summarize this', 'Summarize the text.')
+check('英文草稿追加英文澄清条款', enOut.includes('Before starting') && !enOut.includes('执行前'))
+check('空输出不追加', appendClarification('x', '') === '')
+check('已含中文等效澄清时不重复追加', appendClarification('x', '请先澄清需求，确认清楚后再开始执行。') === '请先澄清需求，确认清楚后再开始执行。')
+check(
+  '已含英文等效澄清时不重复追加',
+  !appendClarification('x', 'Before starting, ask me the necessary questions.').includes('Before starting, check the request above')
+)
+check('hasClarification 识别中文条款', hasClarification('请先澄清需求，确认清楚后再开始执行'))
+check('hasClarification 对普通输出返回 false', !hasClarification('直接给出修改后的全文'))
 
 console.log('== repairRefs ==')
 check(
